@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net default catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && (
+        request.auth.token.email == 'sidneychambal10@gmail.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Collection User rules
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      allow create: if isSignedIn() && 
+        request.auth.uid == userId && 
+        incoming().userId == request.auth.uid &&
+        incoming().email == request.auth.token.email &&
+        (incoming().role == 'user' || (incoming().role == 'admin' && (
+          request.auth.token.email == 'sidneychambal10@gmail.com'
+        ))) &&
+        incoming().displayName is string &&
+        incoming().displayName.size() <= 128 &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() && 
+        request.auth.uid == userId &&
+        incoming().userId == existing().userId &&
+        incoming().email == existing().email &&
+        (incoming().role == existing().role || isAdmin()) &&
+        incoming().displayName is string &&
+        incoming().displayName.size() <= 128 &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+    }
+
+    // Collection CryptoTransaction rules
+    match /cryptoTransactions/{transactionId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      allow create: if isSignedIn() && 
+        incoming().userId == request.auth.uid &&
+        incoming().userEmail == request.auth.token.email &&
+        incoming().createdAt == request.time &&
+        (incoming().type == 'compra' || incoming().type == 'venda') &&
+        (incoming().coin == 'BTC' || incoming().coin == 'ETH' || incoming().coin == 'USDT') &&
+        incoming().amount is number &&
+        incoming().amount > 0 &&
+        incoming().price is number &&
+        incoming().price > 0 &&
+        incoming().status == 'pendente' &&
+        incoming().displayName is string &&
+        incoming().displayName.size() <= 128;
+
+      allow update: if isSignedIn() && (
+        // Action 1: Admin approves or cancels
+        (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+        // Action 2: User changes pricing/amount when pending
+        (resource.data.userId == request.auth.uid && 
+         existing().status == 'pendente' &&
+         incoming().userId == existing().userId &&
+         incoming().status == 'pendente' &&
+         incoming().displayName == existing().displayName &&
+         incoming().createdAt == existing().createdAt &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['coin', 'amount', 'price']) &&
+         incoming().amount is number && incoming().amount > 0 &&
+         incoming().price is number && incoming().price > 0)
+      );
+
+      allow delete: if isSignedIn() && (
+        isAdmin() || 
+        (resource.data.userId == request.auth.uid && existing().status == 'pendente')
+      );
+    }
+
+    // Collection systemActivities rules
+    match /systemActivities/{activityId} {
+      allow read, list: if isSignedIn();
+      allow create: if isSignedIn() &&
+        incoming().userId == request.auth.uid &&
+        incoming().userEmail == request.auth.token.email &&
+        incoming().createdAt == request.time &&
+        (incoming().type == 'cadastro' || incoming().type == 'login' || incoming().type == 'update_perfil') &&
+        incoming().displayName is string &&
+        incoming().displayName.size() <= 128 &&
+        incoming().description is string &&
+        incoming().description.size() <= 256;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

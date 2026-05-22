@@ -1,0 +1,6 @@
+{
+  "name": "Banze Nexus",
+  "description": "Unified platform hub for local transport, scheduling, and services in the Banze ecosystem.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

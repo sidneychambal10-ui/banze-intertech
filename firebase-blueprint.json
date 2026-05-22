@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Profile info for users logged in via Google.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Google user ID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User profile full name"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Optional user photo URL"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin"],
+          "description": "Access control role"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile update timestamp"
+        }
+      },
+      "required": ["userId", "email", "displayName", "role", "createdAt", "updatedAt"]
+    },
+    "CryptoTransaction": {
+      "title": "Crypto Transaction",
+      "description": "Buy/Sell crypto orders registered in the Banze Intertech system.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique transaction ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User relationship ID"
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Email of user making transaction"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Name of user making transaction"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["compra", "venda"],
+          "description": "Type of operation (Buy/Sell)"
+        },
+        "coin": {
+          "type": "string",
+          "enum": ["BTC", "ETH", "USDT"],
+          "description": "Ticker symbol of the cryptocurrency"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The crypto amount"
+        },
+        "price": {
+          "type": "number",
+          "description": "Total payment amount in MT (Meticais)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pendente", "aprovado", "cancelado"],
+          "description": "Current authorization status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Transaction placement timestamp"
+        }
+      },
+      "required": ["id", "userId", "userEmail", "displayName", "type", "coin", "amount", "price", "status", "createdAt"]
+    },
+    "SystemActivity": {
+      "title": "System Activity",
+      "description": "Log of login, registration, and profile update actions.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique activity ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Relationship user ID"
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Email of acting user"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of active user"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar URL of active user"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["cadastro", "login", "update_perfil"],
+          "description": "Event trigger category"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human readable event log"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Event timestamp"
+        }
+      },
+      "required": ["id", "userId", "userEmail", "displayName", "type", "description", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User account collection mapped by UID"
+    },
+    "cryptoTransactions/{transactionId}": {
+      "schema": "CryptoTransaction",
+      "description": "Global Buy and Sell orders for cryptocurrency"
+    },
+    "systemActivities/{activityId}": {
+      "schema": "SystemActivity",
+      "description": "Audit trail log of all activities and registrations in real-time"
+    }
+  }
+}
